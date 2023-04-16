@@ -7,6 +7,7 @@ import tensorflow as tf
 from flask import Flask, jsonify, request, render_template
 from modules.database import collection as db
 from datetime import datetime
+from torchvision import transforms
 
 app = Flask(__name__)
 
@@ -14,7 +15,7 @@ tflite_model_file_seedlings = 'modules/backed/seedlings.tflite'
 with open(tflite_model_file_seedlings, 'rb') as fid:
     tflite_model_seedlings = fid.read()
 
-tflite_model_file_flowers = 'modules/backed/my_flowers.tflite'
+tflite_model_file_flowers = 'modules/backed/f.tflite'
 with open(tflite_model_file_flowers, 'rb') as fid:
     tflite_model_flowers = fid.read()
 
@@ -43,6 +44,17 @@ def read_image_seed(filename, size):
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
     x = preprocess_input(x)
+    return x
+
+
+def read_image_flower(filename, size):
+    img = load_img(filename, target_size=size)
+    transform = transforms.Compose([
+    transforms.Resize((224, 224)),  # Resize the image to (224, 224)
+    transforms.ToTensor(),  # Convert the image to a tensor
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) ])
+    x = transform(img)
+    x = x.unsqueeze(0)
     return x
 
 
@@ -139,7 +151,7 @@ def predict_flowers():
             file_path = os.path.join('modules/backed/static/images/flowers', filename)
             file.save(file_path)
             img_size = (224, 224)
-            img = read_image_seed(file_path, img_size)  # preprocessing method
+            img = read_image_flower(file_path, img_size)  # preprocessing method
 
             # Load the TFLite model and allocate tensors
             interpreter = tf.lite.Interpreter(model_content=tflite_model_flowers)
@@ -157,15 +169,37 @@ def predict_flowers():
             classes_x = np.argmax(class_prediction)
 
             if classes_x == 0:
-                flower = "Dandelion"
+                flower = "Astilbe"
             elif classes_x == 1:
-                flower = "Daisy"
+                flower = "Bell flower"
             elif classes_x == 2:
-                flower = "Tulip"
+                flower = "Black Eyed Susan"
             elif classes_x == 3:
-                flower = "Sunflower"
+                flower = "Calendula"
             elif classes_x == 4:
+                flower = "California Poppy"
+            elif classes_x == 5:
+                flower = "Carnation"
+            elif classes_x == 6:
+                flower = "Common Daisy"
+            elif classes_x == 7:
+                flower = "Coreopsis"
+            elif classes_x == 8:
+                flower = "Daffodil"
+            elif classes_x == 9:
+                flower = "Dandelion"
+            elif classes_x == 10:
+                flower = "Iris"
+            elif classes_x == 11:
+                flower = "Magnolia"
+            elif classes_x == 12:
                 flower = "Rose"
+            elif classes_x == 13:
+                flower = "Sunflower"
+            elif classes_x == 14:
+                flower = "tulip"
+            elif classes_x == 15:
+                flower = "Water Lily"
 
             db.addFlowerImage(
                 file.filename,
